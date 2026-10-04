@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="color-scheme" content="dark light" />
+    <title>局域网文件传输</title>
+    <link rel="stylesheet" href="/styles.css" />
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ctext y='26' font-size='26'%3E%F0%9F%93%84%3C/text%3E%3C/svg%3E" />
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="brand">
+        <span class="brand-mark" aria-hidden="true"></span>
+        <div class="brand-text">
+          <strong id="deviceName">本机</strong>
+          <span class="muted" id="deviceMeta">正在连接…</span>
+        </div>
+      </div>
+      <div class="topbar-actions">
+        <button class="ghost" id="copyLink" type="button">复制访问地址</button>
+        <button class="ghost" id="toggleSettings" type="button" aria-expanded="false">设置</button>
+      </div>
+    </header>
+
+    <section class="banner" id="lanBanner" hidden></section>
+
+    <main class="grid">
+      <section class="panel" aria-labelledby="sendHeading">
+        <div class="panel-head">
+          <h2 id="sendHeading">发送文件</h2>
+          <span class="pill" id="deviceCount">0 台设备</span>
+        </div>
+
+        <div class="peers" id="peers" role="radiogroup" aria-label="选择接收方"></div>
+
+        <div class="dropzone" id="dropzone" tabindex="0" role="button" aria-describedby="dropHint">
+          <div class="dropzone-inner">
+            <strong>拖拽文件或文件夹到这里</strong>
+            <span class="muted" id="dropHint">也可以点击选择,支持整个文件夹和断点续传</span>
+          </div>
+          <input type="file" id="fileInput" multiple hidden />
+          <input type="file" id="folderInput" webkitdirectory directory multiple hidden />
+        </div>
+
+        <div class="picker-row">
+          <button class="ghost" id="pickFiles" type="button">选择文件</button>
+          <button class="ghost" id="pickFolder" type="button">选择文件夹</button>
+          <button class="ghost" id="manualIp" type="button">手动输入 IP</button>
+        </div>
+
+        <div class="queue" id="sendQueue"></div>
+
+        <div class="send-bar" id="sendBar" hidden>
+          <span id="sendSummary">准备就绪</span>
+          <div class="send-bar-actions">
+            <button class="primary" id="sendNow" type="button">发送</button>
+            <button class="ghost" id="sendCancel" type="button" hidden>取消</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel" aria-labelledby="recvHeading">
+        <div class="panel-head">
+          <h2 id="recvHeading">接收文件</h2>
+          <span class="pill" id="recvDir" title="保存目录">…</span>
+        </div>
+        <div class="inbox" id="inbox">
+          <div class="empty" id="inboxEmpty">
+            <strong>暂无传输</strong>
+            <span class="muted">对方发送文件后,这里会出现接收请求</span>
+          </div>
+        </div>
+        <div class="history" id="history"></div>
+      </section>
+    </main>
+
+    <section class="settings" id="settings" hidden aria-labelledby="settingsHeading">
+      <h2 id="settingsHeading">设置</h2>
+      <div class="settings-grid">
+        <label>
+          <span>本机名称</span>
+          <input type="text" id="cfgName" maxlength="64" />
+        </label>
+        <label>
+          <span>接收保存目录</span>
+          <input type="text" id="cfgDir" />
+        </label>
+        <label>
+          <span>分片大小</span>
+          <select id="cfgChunk">
+            <option value="1048576">1 MB</option>
+            <option value="4194304">4 MB</option>
+            <option value="8388608">8 MB</option>
+            <option value="16777216">16 MB</option>
+            <option value="33554432">32 MB</option>
+          </select>
+        </label>
+        <label>
+          <span>同名文件</span>
+          <select id="cfgConflict">
+            <option value="rename">自动重命名</option>
+            <option value="overwrite">覆盖</option>
+          </select>
+        </label>
+        <label>
+          <span>接收策略</span>
+          <select id="cfgAccept">
+            <option value="ask">每次询问</option>
+            <option value="auto">自动接收</option>
+          </select>
+        </label>
+        <label>
+          <span>设备发现</span>
+          <select id="cfgDiscovery">
+            <option value="both">mDNS + 广播</option>
+            <option value="mdns">仅 mDNS</option>
+            <option value="beacon">仅广播</option>
+            <option value="off">关闭</option>
+          </select>
+        </label>
+      </div>
+      <div class="settings-actions">
+        <button class="primary" id="saveSettings" type="button">保存设置</button>
+        <span class="muted" id="settingsStatus"></span>
+      </div>
+      <details class="help">
+        <summary>使用说明</summary>
+        <ol>
+          <li>两台电脑都装好 Node.js(18 以上)并运行本程序。</li>
+          <li>在 A 电脑终端看到访问地址后,在 B 电脑浏览器打开该地址。</li>
+          <li>两边页面互相出现在"设备"列表里,即可直接拖拽发送。</li>
+          <li>传输中断后重新发送同一文件,会自动跳过已收到的分片继续传。</li>
+          <li>如果两台机器不在同一网段,请用"手动输入 IP"直接指定对方地址。</li>
+        </ol>
+        <p class="muted">
+          macOS 首次运行会弹出"允许接受传入连接",请点允许。Windows 首次运行时
+          防火墙可能询问,请勾选"专用网络"并允许。
+        </p>
+      </details>
+    </section>
+
+    <div class="toasts" id="toasts" role="status" aria-live="polite"></div>
+
+    <dialog id="manualDialog">
+      <form method="dialog">
+        <h3>手动输入接收方地址</h3>
+        <label>
+          <span>IP 或主机名</span>
+          <input type="text" id="manualHost" placeholder="192.168.1.20" required />
+        </label>
+        <label>
+          <span>端口</span>
+          <input type="number" id="manualPort" value="47831" min="1" max="65535" required />
+        </label>
+        <label>
+          <span>对方名称(可选)</span>
+          <input type="text" id="manualName" placeholder="对方电脑" />
+        </label>
+        <p class="muted small">适用于两台设备不在同一网段、或自动发现被路由器屏蔽的情况。</p>
+        <menu>
+          <button value="cancel" class="ghost">取消</button>
+          <button value="ok" class="primary" id="manualOk">连接</button>
+        </menu>
+      </form>
+    </dialog>
+
+    <script type="module" src="/app.js"></script>
+  </body>
+</html>

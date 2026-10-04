@@ -1,0 +1,24 @@
+{
+  "name": "lan-transfer",
+  "version": "1.0.0",
+  "private": true,
+  "description": "\u5c40\u57df\u7f51\u6587\u4ef6\u4f20\u8f93,\u652f\u6301 macOS \u4e0e Windows \u4e92\u4f20,\u96f6\u4f9d\u8d56,\u6d4f\u89c8\u5668\u76f4\u63a5\u4f7f\u7528",
+  "bin": {
+    "lan-transfer": "bin/lan-transfer.js"
+  },
+  "main": "src/http/server.js",
+  "scripts": {
+    "start": "node bin/lan-transfer.js",
+    "test": "node --test --test-timeout=30000 \"tests/*.test.js\"",
+    "test:safepath": "node --test tests/safepath.test.js",
+    "test:dns": "node --test tests/dns-codec.test.js",
+    "test:transfer": "node --test tests/transfer-e2e.test.js",
+    "test:discovery": "node tests/discovery-live.js"
+  },
+  "engines": {
+    "node": ">=18.17.0"
+  },
+  "dependencies": {},
+  "devDependencies": {},
+  "license": "MIT"
+}
